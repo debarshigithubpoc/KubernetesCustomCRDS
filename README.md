@@ -1,29 +1,62 @@
-<!-- Create a local registry in kubernetes cluster hosted in minikube -->
+```markdown
+# Setting Up a Local Registry in a Kubernetes Cluster Hosted on Minikube
 
+## Step 1: Create a Local Registry
+
+Run the following command to create a local registry in your Kubernetes cluster:
+
+```bash
 kubectl run registry --image=registry:2 --port=5000
+```
 
+Expose the deployment as a NodePort service:
+
+```bash
 kubectl expose deployment registry --type=NodePort
+```
 
----------------------------------------------------------------------------------------------------------
-Microsoft Windows [Version 10.0.21996.1]
-(c) Microsoft Corporation. All rights reserved.
+## Step 2: Retrieve Minikube IP and Verify the Registry
 
-C:\Windows\system32>minikube ip -p k8scluster2
+Get the Minikube IP address:
+
+```bash
+minikube ip -p k8scluster2
+```
+
+Example output:
+
+```
 172.23.215.15
+```
 
-C:\Windows\system32>kubectl get all
+Check the status of the registry:
+
+```bash
+kubectl get all
+```
+
+Example output:
+
+```
 NAME           READY   STATUS    RESTARTS   AGE
 pod/registry   1/1     Running   0          5m52s
 
 NAME                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 service/kubernetes   ClusterIP   10.96.0.1       <none>        443/TCP          7h44m
 service/registry     NodePort    10.106.211.85   <none>        5000:30124/TCP   4m1s
+```
 
-minikube ip > 172.23.215.15:30124
+The registry can be accessed at:
 
----------------------------------------------------------------------------------------------------------
+```
+172.23.215.15:30124
+```
 
-<!-- Got to docker settings > Docker enginer in Docker desktop windows  -->
+## Step 3: Configure Docker Desktop for the Local Registry
+
+Go to **Docker Desktop Settings > Docker Engine** and add the following configuration:
+
+```json
 {
   "builder": {
     "gc": {
@@ -34,31 +67,62 @@ minikube ip > 172.23.215.15:30124
   "experimental": false,
   "insecure-registries": ["172.23.215.15:30124"]
 }
+```
 
+## Step 4: Build and Push a Local Docker Image
 
+Build the Docker image:
 
-<!-- Build Local Docker Image -->
+```bash
 docker build -t custom-controller:v2 .
+```
 
-<!-- Tag Image to local Registry -->
+Tag the image for the local registry:
 
-docker tag custom-controller:v1 172.23.215.15:30124/custom-controller:v2
+```bash
+docker tag custom-controller:v2 172.23.215.15:30124/custom-controller:v2
+```
 
-<!-- Push Image to loca registry -->
+Push the image to the local registry:
 
+```bash
 docker push 172.23.215.15:30124/custom-controller:v2
+```
 
-<!-- In the image put the cluster ip of the local registry service -->
+## Step 5: Verify the Registry Service
 
+Check the services in the cluster:
+
+```bash
+kubectl get svc
+```
+
+Example output:
+
+```
 NAMESPACE     NAME                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                  AGE
 default       service/kubernetes   ClusterIP   10.96.0.1       <none>        443/TCP                  7h55m
 default       service/registry     NodePort    10.106.211.85   <none>        5000:30124/TCP           15m
+```
 
-<!-- Since the CustomeCRDPOD is a cluster ip it wont be able to reach nodeport service  -->
-10.106.211.85:30124/custom-controller:v2
+Ensure the NodePort IP and port are accessible:
 
-<!-- Validate if the custom config map is created or not  -->
+```
+172.23.215.15:30124/custom-controller:v2
+```
 
-C:\Windows\system32>kubectl get ccm
+## Step 6: Validate the Custom Config Map
+
+Check if the custom config map is created:
+
+```bash
+kubectl get ccm
+```
+
+Example output:
+
+```
 NAME                          AGE
 my-custom-resource-instance   2m37s
+```
+```
